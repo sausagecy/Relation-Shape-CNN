@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import pointnet2_utils
+import utils.pointnet2_utils as pointnet2_utils
 import pytorch_utils as pt_utils
 from typing import List
 import numpy as np
@@ -82,7 +82,7 @@ class PointnetSAModuleMSG(_PointnetSAModuleBase):
             mlps: List[List[int]],
             use_xyz: bool = True,
             bias = True,
-            init = nn.init.kaiming_normal,
+            init = nn.init.kaiming_normal_,
             first_layer = False,
             relation_prior = 1
     ):
@@ -112,7 +112,7 @@ class PointnetSAModuleMSG(_PointnetSAModuleBase):
                                   stride = (1, 1), bias = bias)
             init(xyz_raising.weight)
             if bias:
-                nn.init.constant(xyz_raising.bias, 0)
+                nn.init.constant_(xyz_raising.bias, 0)
         elif npoint is not None:
             mapping_func1 = nn.Conv2d(in_channels = in_channels, out_channels = math.floor(C_out / 4), kernel_size = (1, 1), 
                                       stride = (1, 1), bias = bias)
@@ -122,14 +122,14 @@ class PointnetSAModuleMSG(_PointnetSAModuleBase):
             init(mapping_func1.weight)
             init(mapping_func2.weight)
             if bias:
-                nn.init.constant(mapping_func1.bias, 0)
-                nn.init.constant(mapping_func2.bias, 0)    
+                nn.init.constant_(mapping_func1.bias, 0)
+                nn.init.constant_(mapping_func2.bias, 0)    
                      
             # channel raising mapping
             cr_mapping = nn.Conv1d(in_channels = C_in if not first_layer else 16, out_channels = C_out, kernel_size = 1, 
                                       stride = 1, bias = bias)
             init(cr_mapping.weight)
-            nn.init.constant(cr_mapping.bias, 0)
+            nn.init.constant_(cr_mapping.bias, 0)
         
         if first_layer:
             mapping = [mapping_func1, mapping_func2, cr_mapping, xyz_raising]
