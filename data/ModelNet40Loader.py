@@ -8,7 +8,7 @@ sys.path.append(BASE_DIR)
 
 def _get_data_files(list_filename):
     with open(list_filename) as f:
-        return [line.rstrip()[5:] for line in f]
+        return [line.rstrip()[0:] for line in f]
 
 def _load_data_file(name):
     f = h5py.File(name)

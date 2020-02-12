@@ -57,8 +57,7 @@ def main():
         train_dataset, 
         batch_size=args.batch_size,
         shuffle=True, 
-        num_workers=int(args.workers), 
-        pin_memory=True
+        num_workers=int(args.workers)
     )
 
     test_dataset = ModelNet40Cls(num_points = args.num_points, root = args.data_root, transforms=test_transforms, train=False)
@@ -66,8 +65,7 @@ def main():
         test_dataset, 
         batch_size=args.batch_size,
         shuffle=False, 
-        num_workers=int(args.workers), 
-        pin_memory=True
+        num_workers=int(args.workers)
     )
     
     model = RSCNN_SSN(num_classes = args.num_classes, input_channels = args.input_channels, relation_prior = args.relation_prior, use_xyz = True)
@@ -135,33 +133,36 @@ def validate(test_dataloader, model, criterion, args, iter):
     global g_acc
     model.eval()
     losses, preds, labels = [], [], []
-    for j, data in enumerate(test_dataloader, 0):
-        points, target = data
-        points, target = points.cuda(), target.cuda()
-        points, target = Variable(points, volatile=True), Variable(target, volatile=True)
-        
-        # fastest point sampling
-        fps_idx = pointnet2_utils.furthest_point_sample(points, args.num_points)  # (B, npoint)
-        # fps_idx = fps_idx[:, np.random.choice(1200, args.num_points, False)]
-        points = pointnet2_utils.gather_operation(points.transpose(1, 2).contiguous(), fps_idx).transpose(1, 2).contiguous()
+    with torch.no_grad():
+        for j, data in enumerate(test_dataloader, 0):
+            points, target = data
+            points, target = points.cuda(), target.cuda()
+            points, target = Variable(points), Variable(target)
+            
+            # fastest point sampling
+            fps_idx = pointnet2_utils.furthest_point_sample(points, args.num_points)  # (B, npoint)
+            # fps_idx = fps_idx[:, np.random.choice(1200, args.num_points, False)]
+            points = pointnet2_utils.gather_operation(points.transpose(1, 2).contiguous(), fps_idx).transpose(1, 2).contiguous()
 
-        pred = model(points)
-        target = target.view(-1)
-        loss = criterion(pred, target)
-        losses.append(loss.data.clone())
-        _, pred_choice = torch.max(pred.data, -1)
-        
-        preds.append(pred_choice)
-        labels.append(target.data)
-        
-    preds = torch.cat(preds, 0)
-    labels = torch.cat(labels, 0)
-    acc = (preds == labels).sum() / labels.numel()
-    print('\nval loss: %0.6f \t acc: %0.6f\n' %(np.array(losses).mean(), acc))
-    if acc > g_acc:
-        g_acc = acc
-        torch.save(model.state_dict(), '%s/cls_ssn_iter_%d_acc_%0.6f.pth' % (args.save_path, iter, acc))
-    model.train()
+            pred = model(points)
+            target = target.view(-1)
+            loss = criterion(pred, target)
+            losses.append(loss.data.clone())
+            _, pred_choice = torch.max(pred.data, -1)
+
+            
+            preds.append(pred_choice)
+            labels.append(target.data)
+            
+        preds = torch.cat(preds, 0)
+        labels = torch.cat(labels, 0)
+        #print(torch.sum(preds == labels), labels.numel())
+        acc = torch.sum(preds == labels).item()/labels.numel()
+        print('\nval loss: %0.6f \t acc: %0.6f\n' %(np.array(losses).mean(), acc))
+        if acc > g_acc:
+            g_acc = acc
+            torch.save(model.state_dict(), '%s/cls_ssn_iter_%d_acc_%0.6f.pth' % (args.save_path, iter, acc))
+        model.train()
     
 if __name__ == "__main__":
     main()
