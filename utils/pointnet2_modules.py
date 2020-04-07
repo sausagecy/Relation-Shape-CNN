@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import utils.pointnet2_utils as pointnet2_utils
-import pytorch_utils as pt_utils
+import utils.pytorch_utils as pt_utils
 from typing import List
 import numpy as np
 import time
