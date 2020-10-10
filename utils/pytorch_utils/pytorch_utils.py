@@ -1,4 +1,4 @@
-import torch
+ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
@@ -42,9 +42,10 @@ class RSConv(nn.Module):
         self.cr_mapping = mapping[2]
         if first_layer:
             self.xyz_raising = mapping[3]
+
         
     def forward(self, input): # input: (B, 3 + 3 + C_in, npoint, centroid + nsample)
-        
+                              # input is defined in class QueryAndGroup(nn.Module)
         x = input[:, 3:, :, :]           # (B, C_in, npoint, nsample+1), input features
         C_in = x.size()[1]
         nsample = x.size()[3]
@@ -59,7 +60,7 @@ class RSConv(nn.Module):
         coord_xi = abs_coord[:, :, :, 0:1].repeat(1, 1, 1, nsample)   # (B, 3, npoint, nsample),  centroid point
         h_xi_xj = torch.norm(delta_x, p = 2, dim = 1).unsqueeze(1)
         if self.relation_prior == 1:
-            h_xi_xj = torch.cat((h_xi_xj, coord_xi, abs_coord, delta_x), dim = 1)
+            h_xi_xj = torch.cat((h_xi_xj, coord_xi, abs_coord, delta_x), dim = 1) # (ED, xi, xj, xj-xi)
         elif self.relation_prior == 2:
             h_xi_xj = torch.cat((h_xi_xj, coord_xi, zero_vec, abs_coord, zero_vec, delta_x, zero_vec), dim = 1)
         del coord_xi, abs_coord, delta_x
@@ -133,7 +134,7 @@ class SharedRSConv(nn.Sequential):
 class GloAvgConv(nn.Module):
     '''
     Input shape: (B, C_in, 1, nsample)
-    Output shape: (B, C_out, npoint)
+    Output shape: (B, C_out)
     '''
     def __init__(
             self, 
@@ -288,7 +289,7 @@ class Conv1d(_ConvBase):
             padding: int = 0,
             activation=nn.ReLU(inplace=True),
             bn: bool = False,
-            init=nn.init.kaiming_normal,
+            init=nn.init.kaiming_normal_,
             bias: bool = True,
             preact: bool = False,
             name: str = ""
