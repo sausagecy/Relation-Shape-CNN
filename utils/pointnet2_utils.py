@@ -386,7 +386,7 @@ class QueryAndGroup(nn.Module):
             xyz_trans, idx
         )  # (B, 3, npoint, nsample)
         raw_grouped_xyz = grouped_xyz
-        grouped_xyz -= new_xyz.transpose(1, 2).unsqueeze(-1)
+        grouped_xyz = grouped_xyz - new_xyz.transpose(1, 2).unsqueeze(-1)
 
         if features is not None:
             grouped_features = grouping_operation(features, idx)

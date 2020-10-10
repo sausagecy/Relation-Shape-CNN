@@ -25,7 +25,7 @@ class _PointnetSAModuleBase(nn.Module):
         xyz : torch.Tensor
             (B, N, 3) tensor of the xyz coordinates of the points
         features : torch.Tensor
-            (B, N, C) tensor of the descriptors of the the points
+            (B, C, N) tensor of the descriptors of the the points
 
         Returns
         -------
@@ -95,6 +95,7 @@ class PointnetSAModuleMSG(_PointnetSAModuleBase):
         # initialize shared mapping functions
         C_in = (mlps[0][0] + 3) if use_xyz else mlps[0][0]
         C_out = mlps[0][1]
+
         
         if relation_prior == 0:
             in_channels = 1
@@ -242,7 +243,7 @@ class PointnetFPModule(nn.Module):
         new_features = self.mlp(new_features)
 
         return new_features.squeeze(-1)
-
+     
 
 if __name__ == "__main__":
     from torch.autograd import Variable
